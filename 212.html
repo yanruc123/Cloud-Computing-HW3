@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+    <head>
+        <title>HW3 2.1.2</title>
+        <!-- Load d3.js -->
+        <script src="https://d3js.org/d3.v4.js"></script>
+    </head>
+
+        <!-- Create a div where the graph will take place -->
+        <div id="my_dataviz"></div>
+
+        <script>
+            
+		// get the data
+		d3.csv("auto-mpg.csv", function(data) {
+			// var rows  = d3.csvParseRows(data)
+			var columns = ["Model Year", "Number of Cars"];
+			var table = d3.select('#my_dataviz')
+						.append('table')
+							.style("border-collapse", "collapse")
+							.style("border", "2px black solid");
+
+			// headers
+			table.append("thead").append("tr")
+				.selectAll("th")
+				.data(columns)
+				.enter().append("th")
+				.text(function(d) { return d; })
+				.style("border", "1px black solid")
+				.style("padding", "5px")
+				.style("background-color", "lightgray")
+				.style("font-weight", "bold")
+				.style("text-transform", "uppercase");
+
+            function count_year (dataframe) {
+                // extract model-year from dataframe
+                var dataFilter = data.map(function (d) {
+                    return d["model-year"];
+                });
+
+                // count the number of models
+                var counts = Array.from(new Set(dataFilter)).map(a =>
+                    ({name:a, count: dataFilter.filter(f => f === a).length}));
+
+                // convert count to 2D array
+                var result = []
+                for (let i = 0; i < counts.length; i++) {
+                    result = result.concat([[counts[i].name, String(counts[i].count)]]);
+                }
+                return result
+            }
+
+			// data
+			table.append("tbody")
+				.selectAll("tr").data(count_year(data))
+				.enter().append("tr")
+				.selectAll("td")
+				.data(function(d){return d;})
+				.enter().append("td")
+				.style("border", "1px black solid")
+				.style("padding", "5px")
+				.on("mouseover", function(){
+				d3.select(this).style("background-color", "powderblue");
+			})
+				.on("mouseout", function(){
+				d3.select(this).style("background-color", "white");
+			})
+				.text(function(d){return d;})
+				.style("font-size", "12px");
+		});
+
+        </script>
+</html>

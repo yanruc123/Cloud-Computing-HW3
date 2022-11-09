@@ -1,0 +1,123 @@
+<!doctype html>
+<html>
+    <head>
+        <title>HW3 1.2.3</title>
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+    </head>
+
+    <body>
+        <script>
+
+            d3.csv("seattle-weather.csv", function(data) {
+                // create a new array only consisting weather
+                var map = data.map(function (i) {
+                    return i.weather;
+                });
+
+                var counts = Array.from(new Set(map)).map(a =>
+                    ({name:a, count: map.filter(f => f === a).length}));
+
+                var sum = map.length;
+
+                console.log(counts);
+
+                var width = 750;
+                var height = 1500;
+                var r = 250; 
+
+                var colorScale = d3.scaleOrdinal()
+                    .domain(counts)
+                    .range(d3.schemeSet2);
+
+                var canvas = d3.select("body")
+                    .append("svg")
+                    .attr("width", width)
+                    .attr("height", height)
+                
+                // make a group for chart
+                var group = canvas.append("g")
+                    .attr("transform", "translate(350, 300)");
+
+                // make an arc
+                var arc = d3.arc()
+                    .innerRadius(0)
+                    .outerRadius(r);
+
+                // define a pie element
+                var pie = d3.pie()
+                    .value(function(d) { return d.count; })
+
+                console.log(pie(counts));
+                
+                // bind pie to data
+                var arcs = group.selectAll(".arc")
+                    .data(pie(counts))
+                    .enter()
+                        .append("g")  // group each arc as an element
+                        .attr("class", "arc")   // assign each data class arc
+
+                // then we need to add startAngle and endAngle to d
+                arcs.append("path")
+                    .attr("d", arc)
+                    .attr("fill", function(d) { return colorScale(d.data.name); })
+
+                
+                    
+                // add percentage for each arc
+                arcs.append("g")
+                    .append("text")
+                    // put text to each arc's centroid
+                    .attr("transform", function (d) { 
+                        var center = arc.centroid(d)
+                        if (parseInt(d.value) < 80) {
+                            var x = center[0]+center[0]/2
+                            var y = center[1]+center[1]/2
+                            return "translate(" + x + "," + y + ")";
+                        } else {
+                            return "translate(" + arc.centroid(d) + ")";
+                        }
+                     })
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", "1.5em")
+                    .text(function (d) { 
+                        return Math.round((d.value/sum)*100)+"%"; 
+                    });
+
+                var legendG = canvas.selectAll(".legend")
+                    .data(pie(counts))
+                    .enter().append("g")
+                    .attr("transform", function(d,i){
+                        return "translate(" + (width - 130) + "," + (i * 15 + 50) + ")";
+                    })
+                    .attr("class", "legend");   
+                    
+                    legendG.append("rect")
+                    .attr("width", 10)
+                    .attr("height", 10)
+                    .attr("fill", function(d, i) {
+                        return colorScale(d.data.name);
+                    });
+                    
+                    legendG.append("text")
+                    .text(function(d){
+                        return d.data.name;
+                    })
+                    .style("font-size", 14)
+                    .attr("y", 10)
+                    .attr("x", 11);
+
+                // add a group for titles
+                var group_title = canvas.append("g")
+                    .append("text")
+                        .attr("class", "x label")
+                        .attr("text-anchor", "middle")
+                        .attr("x", width/2)
+                        .attr("y", 20)
+                        .text("Pie Chart for Weather");
+
+            })
+
+        </script>
+    </body>
+</html>

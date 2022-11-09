@@ -1,4 +1,18 @@
 # Cloud Computing HW3
+## --IMPORTANT! Please Read--
+<b> I downloaded all the csv files from the source to avoid Cross-Origin Resource Sharing (CORS) so all the d3.csv are using files from local storage (which I included in my submission). I don't want to enable the CORS setting on my browser either due to security reasons. </b>
+
+For task3, I created a **les_mis.json** from **les_mis.csv** using javascript for convinence in implementation. To recreate **les_mis.json**, uncomment line `149`:
+
+``` js
+// downloadTextFile(dictstring, 'les_mis.json');
+```
+to
+``` js
+downloadTextFile(dictstring, 'les_mis.json');
+```
+
+
 ## Task 1
 ### Problem 1.1.1
 SVG uses a coordinate system where the top left corner of the document is considered to be point (0,0) with a positive x direction to the right and positive y direction to the bottom. Mathematical graph coordinate space uses a coordinate system where the center of the document is considered to be point (0,0) with a positive x direction to the right and positive y direction to top. 
@@ -1684,6 +1698,7 @@ In the second script, the combination of selectAll(“span”) and .data(data) w
 <img src="images/image23.png"
      style="float: center; margin-right: 10px;width:1050px;height:900px;" />
 
+## Task 3
 ### Problem 3.1.1, 3.1.2
 ```html
 <!DOCTYPE html>

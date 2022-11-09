@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script type="text/javascript" src="https://d3js.org/d3.v3.min.js""></script>
+		<script type="text/javascript" src="fisheye.js"></script>
+		<style>
+			body{ font: Arial 12px; text-align: center;}
+
+			.link {
+			  stroke: #ccc;
+			}
+
+			.node text {
+			  pointer-events: none;
+			  font: sans-serif;
+			}
+
+			/* magnifier glass as circle */
+			.lens {
+				stroke: gray;
+				stroke-width: 2.0px;
+				stroke-opacity: 0;
+				fill: none;
+			}
+		</style>
+		<!-- <link rel="stylesheet" type="text/css" href="main.css"> -->
+	</head>
+	<body>
+    <h3>Les Misérables-Social Network Analysis</h3>
+	<p>
+		From the graph we can see some of the most connected characters: Marius, Bossuet, Joly, Courfeyrac, Grantaire, Bahorel, Fantine, Valjean. Some of them are connected by other character but did't initiate the connection themselves. We could make an educated guess that they may be the main characters in the novel. Other characters such as Champtercier, Napoleon, Count, who are not well connected, should be side characters in the novel. We could also see in such novel like Les Misérables, there are lots of characters and have a convoluted relationship between them. This also fits 7 people social principle where all people on planet is connected at most 7 people through mutual acquitence. 
+
+	</p>
+	<script type="text/javascript">
+	//Set margins and sizes
+	var margin = {
+		top: 30,
+		bottom: 50,
+		right: 30,
+		left: 50
+	};
+	var width = 1060 - margin.left - margin.right;
+	var height = 800 - margin.top - margin.bottom;
+	//Load Color Scale
+	var c10 = d3.scale.category10();
+
+	//Create an SVG element and append it to the DOM
+	var svgElement = d3.select("body")
+						.append("svg").attr({"width": width+margin.left+margin.right, "height": height+margin.top+margin.bottom})
+						.append("g")
+						.attr("transform","translate("+margin.left+","+margin.top+")");	
+
+	
+	var fisheye = d3.fisheye.circular()
+		.radius(200)
+		.distortion(2);
+
+	// magnifier as circle
+	var lens = svgElement.append("circle")
+		.attr("class","lens")
+		.attr("r", fisheye.radius());
+
+    function onlyUnique(value, index, self) {
+        return self.indexOf(value) === index;
+    }
+
+    var result;
+    
+    d3.csv("les_mis.csv", function(data){
+        console.log(data)
+        // create nodes array of dictionary
+        // get unique characters
+        var characters_source = data.map(function (d) {
+            return d["source"];
+        });
+        var characters_target = data.map(function (d) {
+            return d["target"];
+        });
+        var characters = characters_source.concat(characters_target).filter(onlyUnique);
+
+        // bind id to characters
+        var characters_dict = {};
+        var counter = 0;
+        for (let i = 0; i < characters.length; i++) {
+            characters_dict[characters[i]] = counter;
+            counter = counter + 1;
+        }
+
+        // compute influence for characters
+        var influence_dict = {}; // {character, # outgoing lines}
+        for (let i = 0; i < characters.length; i++) {
+            influence_dict[characters[i]] = 0;
+        }
+
+        for (let i = 0; i < data.length; i++) {
+            influence_dict[data[i]['source']] = influence_dict[data[i]['source']] + 1;
+        }
+
+        // get zone for each character, source and target
+        var zone_dict = {}; // {character, zone #}
+        for (let i = 0; i < characters.length; i++) {
+            zone_dict[characters[i]] = 0;
+        }
+
+        for (let i = 0; i < data.length; i++) {
+            zone_dict[data[i]['source']] = data[i]['groupsource'];
+            zone_dict[data[i]['target']] = data[i]['grouptarget'];
+        }
+
+        // concat everything to nodes Array
+        var nodes = []
+        for (let i = 0; i < characters.length; i++) {
+            var char_name = characters[i]
+            nodes.push({
+                "character": char_name, 
+                "id": characters_dict[char_name], 
+                "influence": influence_dict[char_name],
+                "zone": +zone_dict[char_name]
+            })
+        }
+
+        // create links
+        // create i, source-target-weight dict
+        var source_target_weight = {}
+        for (let i = 0; i < data.length; i++) {
+            source_target_weight[String(i)] = [data[i]['source'], data[i]['target'], data[i]['value']]
+        }
+		
+        var links = []
+        Object.entries(source_target_weight).forEach(([k,v]) => {
+			links.push({
+                "source": +characters_dict[v[0]],
+                "target": +characters_dict[v[1]],
+                "weight": +v[2]
+            })
+        })
+
+        // put nodes and links together
+        result = {"nodes": nodes, "links": links}
+
+        var dictstring = JSON.stringify(result);
+        // var fs = require('fs');
+        // fs.writeFile("les_mis.json", dictstring);
+        console.log(result)
+        function downloadTextFile(text, name) {
+            const a = document.createElement('a');
+            const type = name.split(".").pop();
+            a.href = URL.createObjectURL( new Blob([text], { type:`text/${type === "txt" ? "plain" : type}` }) );
+            a.download = name;
+            a.click();
+        }
+
+        // downloadTextFile(dictstring, 'les_mis.json');
+    });
+
+	d3.json("les_mis.json", function(dataset){
+		//Extract data from dataset
+		var nodes = dataset.nodes,
+			links = dataset.links;
+			
+		//Create Force Layout
+		var force = d3.layout.force()
+						.size([width, height])
+						.nodes(nodes)
+						.links(links)
+						.gravity(0.05)
+						.charge(-200)
+						.linkDistance(200);
+		//Add links to SVG
+		var link = svgElement.selectAll(".link")
+					.data(links)
+					.enter()
+					.append("line")
+					.attr("stroke-width", function(d){ return d.weight/3; })
+					.attr("class", "link");
+		//Add nodes to SVG
+		var node = svgElement.selectAll(".node")
+					.data(nodes)
+					.enter()
+					.append("g")
+					.attr("class", "node")
+					.call(force.drag);
+		//Add labels to each node
+		var label = node.append("text")
+						.attr("dx", 12)
+						.attr("dy", "0.35em")
+						.attr("font-size", function(d){ return d.influence*1.5>9? d.influence*1.5: 9; })
+						.text(function(d){ return d.character; });
+		//Add circles to each node
+		var circle = node.append("circle")
+						.attr("r", function(d){ return d.influence>5 ? d.influence : 5; })
+						.attr("fill", function(d){ return c10(d.zone*10); });
+
+		svgElement.on("mousemove", function() {
+			fisheye.focus(d3.mouse(this));
+
+			var mouseX = d3.mouse(this)[0];
+			var mouseY = d3.mouse(this)[1];
+			var r = fisheye.radius();
+
+			// display magnifier as circle
+			lens
+				.attr("cx", mouseX)
+				.attr("cy", mouseY);
+
+			node.each(function(d) { d.fisheye = fisheye(d); })
+				.attr("cx", function(d) { return d.fisheye.x; })
+				.attr("cy", function(d) { return d.fisheye.y; })
+				.attr("r", function(d) { return d.fisheye.z * 4.5; })
+				.attr("transform", function(d) {
+					return "translate(" + d.fisheye.x + "," + d.fisheye.y + ")";
+				});
+
+			link.attr("x1", function(d) { return d.source.fisheye.x; })
+				.attr("y1", function(d) { return d.source.fisheye.y; })
+				.attr("x2", function(d) { return d.target.fisheye.x; })
+				.attr("y2", function(d) { return d.target.fisheye.y; });
+		});
+
+		//This function will be executed for every tick of force layout 
+		force.on("tick", function(){
+			//Set X and Y of node
+			node.attr("r", function(d){ return d.influence; })
+				.attr("cx", function(d){ return d.x; })
+				.attr("cy", function(d){ return d.y; });
+			//Set X, Y of link
+			link.attr("x1", function(d){ return d.source.x; })
+			link.attr("y1", function(d){ return d.source.y; })
+			link.attr("x2", function(d){ return d.target.x; })
+			link.attr("y2", function(d){ return d.target.y; });
+			//Shift node a little
+		    node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+		});
+
+		//Start the force layout calculation
+		force.start();
+	});
+	</script>
+	</body>
+</html>

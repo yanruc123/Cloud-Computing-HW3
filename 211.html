@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+    <head>
+        <title>HW3 2.1.1</title>
+        <!-- Load d3.js -->
+        <script src="https://d3js.org/d3.v4.js"></script>
+    </head>
+
+        <!-- Create a div where the graph will take place -->
+        <div id="my_dataviz"></div>
+
+        <script>
+            
+			// set the dimensions and margins of the graph
+			// var margin = {top: 30, right: 30, bottom: 60, left: 60},
+			// 	width = 560 - margin.left - margin.right,
+			// 	height = 500 - margin.top - margin.bottom;
+
+			// append the svg object to the body of the page
+			// var svg = d3.select("#my_dataviz")
+			// .append("svg")
+			// 	.attr("width", width + margin.left + margin.right)
+			// 	.attr("height", height + margin.top + margin.bottom)
+			// .append("g")
+			// 	.attr("transform",
+			// 		"translate(" + margin.left + "," + margin.top + ")");
+				
+		// get the data
+		d3.csv("auto-mpg.csv", function(data) {
+			// var rows  = d3.csvParseRows(data)
+			var columns = data.columns;
+			var table = d3.select('#my_dataviz')
+						.append('table')
+							.style("border-collapse", "collapse")
+							.style("border", "2px black solid");
+
+			// headers
+			table.append("thead").append("tr")
+				.selectAll("th")
+				.data(columns)
+				.enter().append("th")
+				.text(function(d) { return d; })
+				.style("border", "1px black solid")
+				.style("padding", "5px")
+				.style("background-color", "lightgray")
+				.style("font-weight", "bold")
+				.style("text-transform", "uppercase");
+
+			function extract(d, start, end) {
+				var sliced = d.slice(start, end);
+				var result = [];
+				for (let i = 0; i < sliced.length; i++) {
+					result = result.concat([Object.values(sliced[i])]);
+				}
+				return result;
+			}
+
+			// data
+			table.append("tbody")
+				.selectAll("tr").data(extract(data, 0, 5))
+				.enter().append("tr")
+				.selectAll("td")
+				.data(function(d){return d;})
+				.enter().append("td")
+				.style("border", "1px black solid")
+				.style("padding", "5px")
+				.on("mouseover", function(){
+				d3.select(this).style("background-color", "powderblue");
+			})
+				.on("mouseout", function(){
+				d3.select(this).style("background-color", "white");
+			})
+				.text(function(d){return d;})
+				.style("font-size", "12px");
+		});
+
+        </script>
+</html>

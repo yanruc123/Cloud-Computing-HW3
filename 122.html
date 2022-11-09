@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+    <head>
+        <title>HW3 1.2.1</title>
+        <script src="https://d3js.org/d3.v2.min.js"></script>
+    </head>
+
+    <body>
+        <script>
+
+            d3.csv("seattle-weather.csv", function(data) {
+
+                // create a new array only consisting wind (int)
+                var map = data.map(function (i) {
+                    return parseInt(i.wind);
+                });
+
+                var width = 500;
+                var height = 500;
+                var padding = 60;
+                var padding_horizontal=70;
+
+                // create histogram
+                var histogram = d3.layout.histogram()
+                    .bins(25)
+                    (map)
+
+                var canvas = d3.select("body")
+                    .append("svg")
+                    .attr("width", width+padding_horizontal)
+                    .attr("height", height+padding)
+                    .append("g")
+                        .attr("transform", "translate(65,15)");
+                
+                // bind data to document
+                var bars = canvas.selectAll(".bar")
+                    .data(histogram)
+                    .enter()
+                        .append("g")
+                
+
+                var heightScale = d3.scale.linear()
+                    .domain([0, d3.max(
+                        histogram.map(function(i) { return i.length; })
+                    )])
+                    .range([0, height]);
+
+                // revert height will only used as y-axis label
+                var heightScale_revert = d3.scale.linear()
+                    .domain([0, d3.max(histogram.map(function(i) { return i.length; }))])
+                    .range([height, 0]);
+                
+                var widthScale = d3.scale.linear()
+                    .domain([0, d3.max(map)])
+                    .range([0, width]);
+                
+                // add x axis
+                var xAxis = d3.svg.axis()
+                    .scale(widthScale)
+                    .orient("bottom");
+
+                // add y axis
+                var yAxis = d3.svg.axis()
+                    .scale(heightScale_revert)
+                    .orient("left");
+
+                // add a group for x axis
+                var group_x = canvas.append("g")
+                    .attr("transform", "translate(0," + (height+2) + ")")
+                    .call(xAxis);
+
+                // add a group for y axis
+                var group_y = canvas.append("g")
+                    .attr("transform", "translate(-2, 0)")
+                    .call(yAxis);
+
+                // bind and style the histogram
+                bars.append("rect")
+                    // set starting x position of each bar
+                    .attr("x", function (d) { return widthScale(d.x); })
+                    // set the starting y position of each bar (from beginning: 0)
+                    .attr("y", function (d) { return height-heightScale(d.y) })
+                    // set width of each bin
+                    .attr("width", function (d) { return widthScale(d.dx)-5; })
+                    //set height of each bar
+                    .attr("height", function (d) { return heightScale(d.y); })
+                    //set color of the histogram
+                    .attr("fill", "steelblue")
+                
+                // // add text to axis
+                // bars.append("text")
+                //     .attr("x", function (d) { return widthScale(d.x) })
+                //     .attr("y", function (d) { return 500-heightScale(d.y) })
+                //     .attr("dx", function (d) { return widthScale(d.dx)/2-2 }) // move right
+                //     .attr("dy", function (d) { return heightScale(d.y)/2 })  // move down
+                //     .attr("fill", "black")
+                //     .attr("text-anchor", "middle")
+                //     .text(function (d) { return d.y })
+                
+                // add a group for x axis labels
+                var group_xlabel = canvas.append("g")
+                    .attr("transform", "translate(0," + (height+padding-20) + ")")
+                    .append("text")
+                        .attr("class", "x label")
+                        .attr("text-anchor", "middle")
+                        .attr("x", width/2)
+                        .text("Wind (mph)");
+
+                // add a group for y axis labels
+                var group_ylabel = canvas.append("g")
+                    // .attr("transform", "translate(-2, 0)")
+                    .append("text")
+                        .attr("class", "y label")
+                        .attr("text-anchor", "middle")
+                        .attr("x", -(height-10)/2)
+                        .attr("y", -60)
+                        .attr("dy", ".75em")
+                        .attr("transform", "rotate(-90)")
+                        .text("Number of Days");
+
+                // add a group for titles
+                var group_title = canvas.append("g")
+                    .append("text")
+                        .attr("class", "x label")
+                        .attr("text-anchor", "middle")
+                        .attr("x", width/2)
+                        .text("Histogram of Wind");
+            })
+
+        </script>
+    </body>
+</html>
